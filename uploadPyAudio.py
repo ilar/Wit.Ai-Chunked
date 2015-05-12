@@ -4,7 +4,6 @@ import pyaudio
 import json
 import requests
 import math
-import threading
 
 THRESHOLD = .05
 CHUNK_SIZE = 1024
@@ -25,7 +24,8 @@ def is_silent(block):
         n = sample * SHORT_NORMALIZE
         sum_squares += n*n
 
-    return math.sqrt(sum_squares / count) <= THRESHOLD
+    rms_value = math.sqrt(sum_squares / count)
+    return rms_value, rms_value <= THRESHOLD
 
 
 # Returns as many (up to returnNum) blocks as it can.
@@ -55,7 +55,7 @@ def gen(p, stream):
         for d in snd_data:
             data.append(struct.pack('<i', d))
 
-        silent = is_silent(rms_data)
+        rms, silent = is_silent(rms_data)
 
         if silent and snd_started:
             num_silent += 1
@@ -65,7 +65,7 @@ def gen(p, stream):
             if i < 0:                     # so we can hear the start of speech.
                 i = 0
             snd_started = True
-            print "TRIGGER!"
+            print "TRIGGER at " + str(rms) + " rms."
 
         elif not silent and snd_started and not i >= len(data):
             i, temp = returnUpTo(i, data, 1024)
@@ -84,6 +84,7 @@ def gen(p, stream):
             counter = counter + 1
 
     # Yield the rest of the data.
+    print "Pre-streamed " + str(i) + " of " + str(len(data)) + "."
     while (i < len(data)):
         i, temp = returnUpTo(i, data, 512)
         yield temp
