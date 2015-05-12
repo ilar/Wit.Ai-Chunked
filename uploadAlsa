@@ -3,7 +3,7 @@ from audioop import rms
 import json
 import requests
 
-access_key = ''
+access_key = ''  # Your wit.ai key should go here.
 THRESHOLD = 2000
 CHUNK_SIZE = 128
 
